@@ -1,21 +1,32 @@
---- UsersController詳細表示の改良
--- 20210825 by Takanori Shima
+# UsersController詳細表示の改良
+<p style='text-align: right;'> &copy; 20210825 by Takanori Shima </p>
 
-## /bbs/app/Http/Controllers/UsersController.php 変更
 ```
+* 以下、Cloud9上でターミナルを起動してbbsフォルダ内でコマンドを打つ *
+```
+## 1. /bbs/app/Http/Controllers/UsersController.php 変更
+```
+    /**
+     * Display the specified resource.
+     *
+     * @param  \App\User  $user
+     * @return \Illuminate\Http\Response
+     */
     public function show(User $user)
     {
-        // dd($user->name);
+        // 注目しているユーザのプロフィールデータ取得
         $profile = $user->profile()->get()->first();
+        // 注目しているユーザの投稿一覧取得
         $posts = $user->posts()->get();
-        // dd($profile->nickname);
-        // dd($profile->nickname);
+
+        // view の呼び出し
         return view('users.show', compact('user', 'profile', 'posts'));
     }
+}
 ```
 
 
-## /bbs/resources/views/users/show.blade.php 新規作成・編集
+## 2. /bbs/resources/views/users/show.blade.php 新規作成・編集
 ```
 @extends('layouts.app')
 @section('title', $user->name . 'さんのマイページ')
@@ -72,10 +83,11 @@
 @endsection
 ```
 
-## Git
+## 3. Git
+```
 git add .
 git commit -m "ユーザー詳細ページの改良"
 git push origin main
+```
 
-20210824 done
 
