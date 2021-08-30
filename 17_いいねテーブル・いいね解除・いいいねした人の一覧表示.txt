@@ -3,11 +3,22 @@
 
 ## /bbs/app/Http/Controllers/PostsController.php 変更
 ```
+    /**
+     * Display the specified resource.
+     *
+     * @param  \App\Post  $post
+     * @return \Illuminate\Http\Response
+     */
     public function show(Post $post)
     {
+        // 空のCommentモデル作成
         $comment = new Comment();
+        // 注目する投稿に紐づいたコメント一覧を取得
         $comments = $post->comments()->get();
+        // 注目する投稿にいいねをした人の一覧を取得
         $favorite_users = $post->favorite_users()->get();
+        
+        // view の呼び出し
         return view('posts.show', compact('post', 'comment', 'comments', 'favorite_users'));
     }
 ```
