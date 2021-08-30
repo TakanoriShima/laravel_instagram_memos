@@ -1,0 +1,41 @@
+--- Laravelアプリ作成
+-- 20210824 by Takanori Shima
+
+## ターミナルを起動
+
+## Composerを使って、5.8バージョンのLaravelプロジェクト（bbs）を新規作成
+composer create-project --prefer-dist laravel/laravel bbs "5.8.*"
+
+## /bbs/app/Http/Middleware/TrustProxies.php 変更
+# Cloud9の環境ではAWSのロードバランサが使用されているため、LaravelがURLをうまく生成できない問題あり
+
+## Git
+git config --global user.name "TakanoriShima"
+git config --global user.email "quark2galaxy@gmail.com"
+git config --global -l
+- credential.helper=!aws codecommit credential-helper $@
+- credential.usehttppath=true
+- core.editor=nano
+- user.name=TakanoriShima
+- user.email=quark2galaxy@gmail.com
+
+cd bbs
+git init
+git add .
+git commit -m "プロジェクト作成とプロキシ設定"
+git log
+
+## Github
+git remote add origin https://github.com/TakanoriShima/bbs_laravel_5.8.git
+git branch -M main
+git push -u origin main
+
+# 以下のGithubリポジトリに履歴が残っている
+https://github.com/TakanoriShima/bbs_laravel_5.8
+
+## Laravel サーバ起動
+php artisan serve --host=$IP --port=$PORT
+
+## キャッシュクリアコマンドを打ったのち、サーバ再起動
+php artisan cache:clear
+ 

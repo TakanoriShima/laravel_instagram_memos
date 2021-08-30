@@ -1,0 +1,151 @@
+--- 画像投稿モデル作成
+-- 20210825 by Takanori Shima
+
+## Postモデルとマイグレーションファイル作成(-mはデータベースへのマイグレーションファイルを同時に作成するオプション)
+php artisan make:model -m Post
+
+## /bbs/database/migrations/2021_08_25_104003_create_posts_table.php 編集
+```
+    public function up()
+    {
+        Schema::create('posts', function (Blueprint $table) {
+            $table->bigIncrements('id');
+            $table->unsignedBigInteger('user_id');
+            $table->string('title');
+            $table->string('content');
+            $table->string('image');
+            $table->timestamps();
+
+            // 外部キー制約
+            $table->foreign('user_id')->references('id')->on('users');
+        });
+    }
+```
+
+## マイグレーション
+php artisan migrate
+
+mysql> desc posts;
++------------+---------------------+------+-----+---------+----------------+
+| Field      | Type                | Null | Key | Default | Extra          |
++------------+---------------------+------+-----+---------+----------------+
+| id         | bigint(20) unsigned | NO   | PRI | NULL    | auto_increment |
+| user_id    | bigint(20) unsigned | NO   | MUL | NULL    |                |
+| title      | varchar(191)        | NO   |     | NULL    |                |
+| content    | varchar(191)        | NO   |     | NULL    |                |
+| image      | varchar(191)        | NO   |     | NULL    |                |
+| created_at | timestamp           | YES  |     | NULL    |                |
+| updated_at | timestamp           | YES  |     | NULL    |                |
++------------+---------------------+------+-----+---------+----------------+
+
+## /bbs/app/Post.php 編集
+```
+<?php
+
+namespace App;
+
+use Illuminate\Database\Eloquent\Model;
+use App\User;
+
+class Post extends Model
+{
+    protected $fillable = ['user_id', 'title', 'content', 'image', ];
+    
+    /**
+     * この投稿を所有するユーザ。（ Userモデルとの関係を定義）
+     */
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+}
+```
+
+## /bbs/app/User.php 編集
+```
+<?php
+
+namespace App;
+
+use Illuminate\Notifications\Notifiable;
+use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Illuminate\Foundation\Auth\User as Authenticatable;
+use App\Profile;
+use App\Post;
+
+class User extends Authenticatable
+{
+    use Notifiable;
+
+    /**
+     * The attributes that are mass assignable.
+     *
+     * @var array
+     */
+    protected $fillable = [
+        'name', 'email', 'password',
+    ];
+
+    /**
+     * The attributes that should be hidden for arrays.
+     *
+     * @var array
+     */
+    protected $hidden = [
+        'password', 'remember_token',
+    ];
+
+    /**
+     * The attributes that should be cast to native types.
+     *
+     * @var array
+     */
+    protected $casts = [
+        'email_verified_at' => 'datetime',
+    ];
+    
+    // 「１対１」→ メソッド名は単数形
+    public function profile()
+    {
+        // Profileモデルのデータを引っ張てくる
+        return $this->hasOne(Profile::class);
+    }
+    
+    // 「１対多」→ メソッド名は複数形
+    public function posts()
+    {
+        return $this->hasMany(Post::class);
+    }
+}
+
+```
+
+## tinkerでダミー投稿
+php artisan tinker
+
+use App\User
+use App\Post
+$user = User::first()
+$user->posts()->get()
+$user->posts()->create(['title' => 'hello', 'content' => 'Laravel!!', 'image' => '1.jpg'])
+-=> App\Post {#4185
+-     title: "hello",
+-     content: "Laravel!!",
+-     image: "1.jpg",
+-     user_id: 1,
+-     updated_at: "2021-08-25 10:45:58",
+-     created_at: "2021-08-25 10:45:58",
+-     id: 1,
+-   }
+
+$user->posts()->get()
+$post = Post::first()
+$post->user()->get()
+exit
+
+##  Git/Github
+git add .
+git commit -m "Postモデル作成とマイグレーション、tinkerでダミーデータ挿入完了"
+git log
+git push origin main
+

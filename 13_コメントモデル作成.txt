@@ -1,0 +1,199 @@
+--- コメントモデル作成
+-- 20210825 by Takanori Shima
+
+## Commentモデルとマイグレーションファイル作成(-mはデータベースへのマイグレーションファイルを同時に作成するオプション)
+php artisan make:model -m Comment
+
+## /bbs/database/migrations/2021_08_25_120905_create_comments_table.php 編集
+```
+    public function up()
+    {
+        Schema::create('comments', function (Blueprint $table) {
+            $table->bigIncrements('id');
+            $table->unsignedBigInteger('user_id');
+            $table->unsignedBigInteger('post_id');
+            $table->string('content');
+            $table->timestamps();
+
+            // 外部キー制約
+            $table->foreign('user_id')->references('id')->on('users');
+            $table->foreign('post_id')->references('id')->on('posts')->onDelete('cascade');;
+        });
+    }
+```
+
+## マイグレーション
+php artisan migrate
+
+mysql> desc comments;
++------------+---------------------+------+-----+---------+----------------+
+| Field      | Type                | Null | Key | Default | Extra          |
++------------+---------------------+------+-----+---------+----------------+
+| id         | bigint(20) unsigned | NO   | PRI | NULL    | auto_increment |
+| user_id    | bigint(20) unsigned | NO   | MUL | NULL    |                |
+| post_id    | bigint(20) unsigned | NO   | MUL | NULL    |                |
+| content    | varchar(191)        | NO   |     | NULL    |                |
+| created_at | timestamp           | YES  |     | NULL    |                |
+| updated_at | timestamp           | YES  |     | NULL    |                |
++------------+---------------------+------+-----+---------+----------------+
+
+# /bbs/app/User.php の変形
+```
+<?php
+
+namespace App;
+
+use Illuminate\Notifications\Notifiable;
+use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Illuminate\Foundation\Auth\User as Authenticatable;
+use App\Profile;
+use App\Post;
+use App\Comment;
+
+class User extends Authenticatable
+{
+    use Notifiable;
+
+    /**
+     * The attributes that are mass assignable.
+     *
+     * @var array
+     */
+    protected $fillable = [
+        'name', 'email', 'password',
+    ];
+
+    /**
+     * The attributes that should be hidden for arrays.
+     *
+     * @var array
+     */
+    protected $hidden = [
+        'password', 'remember_token',
+    ];
+
+    /**
+     * The attributes that should be cast to native types.
+     *
+     * @var array
+     */
+    protected $casts = [
+        'email_verified_at' => 'datetime',
+    ];
+    
+    // 「１対１」→ メソッド名は単数形
+    public function profile()
+    {
+        // Profileモデルのデータを引っ張てくる
+        return $this->hasOne(Profile::class);
+    }
+    
+    // 「１対多」→ メソッド名は複数形
+    public function posts()
+    {
+        return $this->hasMany(Post::class);
+    }
+    
+
+    // 自分がしたコメント一覧取得
+    public function comments(){
+        return $this->hasMany(Comment::class);
+    }
+    
+    // コメント投稿
+    public function add_comment($post_id, $content){
+        $comment = new Comment();
+        $comment->user_id = $this->id;
+        $comment->post_id = $post_id;
+        $comment->content = $content;
+        $comment->save();
+        
+    }
+}
+
+```
+
+## /bbs/app/Comment.php 追記
+```
+<?php
+
+namespace App;
+
+use Illuminate\Database\Eloquent\Model;
+use App\User;
+use App\Post;
+
+class Comment extends Model
+{
+    protected $fillable = ['user_id', 'post_id', 'content', ];
+    // そのコメントの主の投稿
+    public function post(){
+        return $this->belongsTo(Post::class);
+    }
+    
+    // そのコメントの主のユーザー
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+    
+}
+
+```
+## /bbs/app/Post.php 追記
+```
+<?php
+
+namespace App;
+
+use Illuminate\Database\Eloquent\Model;
+use App\User;
+use App\Comment;
+
+class Post extends Model
+{
+    protected $fillable = ['user_id', 'title', 'content', 'image', ];
+    
+    /**
+     * この投稿を所有するユーザ。（ Userモデルとの関係を定義）
+     */
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+    
+    // その投稿に紐づいたコメントをしたユーザー一覧取得
+    public function comment_users(){
+        return $this->belongsToMany(User::class, 'comments', 'post_id', 'user_id')->withTimestamps();
+    }
+    
+    // その投稿に紐づいたコメント一覧取得
+    public function comments(){
+        return $this->hasMany(Comment::class);
+    }
+}
+```
+
+## tinker でダミーコメント追加。各種メソッドの挙動確認
+
+https://teratail.com/questions/233022
+
+php artisan tinker
+
+use App\User
+use App\Post
+use App\Comment
+$user = User::first()
+$post = Post::first()
+$user->add_comment($post->id, 'hello')
+
+$post->comments()->get()
+$user->comments()->get()
+$comment = Comment::first()
+$comment->user()->get()
+$comment->post()->get()
+
+## Git
+git add .
+git commit -m "コメントモデル作成とtinkerによるダミーコメント追加完了"
+git push origin main

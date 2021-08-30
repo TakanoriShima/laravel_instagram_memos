@@ -1,0 +1,466 @@
+--- 新規コメント投稿・一覧表示
+-- 20210825 by Takanori Shima
+
+## CommentsController作成
+php artisan make:controller CommentsController --resource --model=Comment
+
+## /bbs/routes/web.php 追記
+```
+<?php
+
+/*
+|--------------------------------------------------------------------------
+| Web Routes
+|--------------------------------------------------------------------------
+|
+| Here is where you can register web routes for your application. These
+| routes are loaded by the RouteServiceProvider within a group which
+| contains the "web" middleware group. Now create something great!
+|
+*/
+
+// Route::get('/', function () {
+//     return view('welcome');
+// });
+// プレビューをした瞬間の設定
+Route::get('/', 'ToppagesController@index');
+
+// ユーザ登録系
+Route::get('signup', 'Auth\RegisterController@showRegistrationForm')->name('signup.get');
+Route::post('signup', 'Auth\RegisterController@register')->name('signup.post');
+
+// ログイン認証系
+Route::get('login', 'Auth\LoginController@showLoginForm')->name('login');
+Route::post('login', 'Auth\LoginController@login')->name('login.post');
+Route::get('logout', 'Auth\LoginController@logout')->name('logout.get');
+
+// プロフィール関係
+Route::resource('profiles', 'ProfilesController');
+
+// ログイン後のトップ画面
+Route::get('top', 'PostsController@index');
+
+// ユーザー認証必要
+Route::group(['middleware' => ['auth']], function () {
+    Route::resource('users', 'UsersController', ['only' => ['index', 'show']]);
+    // 画像投稿関係
+    Route::resource('posts', 'PostsController');
+    Route::group(['prefix' => 'users/{id}'], function () {
+        // いいね関係        
+    });
+    Route::group(['prefix' => 'posts/{id}'], function () {
+        // 投稿に対するコメント
+        Route::post('comment', 'CommentsController@store')->name('post.comment');
+    });
+});
+
+```
+
+## 最新ルーティング確認
+php artisan route:list
++--------+-----------+-------------------------+------------------+-------------------------------------------------------------------+--------------+
+| Domain | Method    | URI                     | Name             | Action                                                            | Middleware   |
++--------+-----------+-------------------------+------------------+-------------------------------------------------------------------+--------------+
+|        | GET|HEAD  | /                       |                  | App\Http\Controllers\ToppagesController@index                     | web          |
+|        | GET|HEAD  | api/user                |                  | Closure                                                           | api,auth:api |
+|        | GET|HEAD  | login                   | login            | App\Http\Controllers\Auth\LoginController@showLoginForm           | web,guest    |
+|        | POST      | login                   | login.post       | App\Http\Controllers\Auth\LoginController@login                   | web,guest    |
+|        | GET|HEAD  | logout                  | logout.get       | App\Http\Controllers\Auth\LoginController@logout                  | web          |
+|        | POST      | posts                   | posts.store      | App\Http\Controllers\PostsController@store                        | web,auth     |
+|        | GET|HEAD  | posts                   | posts.index      | App\Http\Controllers\PostsController@index                        | web,auth     |
+|        | GET|HEAD  | posts/create            | posts.create     | App\Http\Controllers\PostsController@create                       | web,auth     |
+|        | POST      | posts/{id}/comment      | post.comment     | App\Http\Controllers\CommentsController@store                     | web,auth     |
+|        | GET|HEAD  | posts/{post}            | posts.show       | App\Http\Controllers\PostsController@show                         | web,auth     |
+|        | PUT|PATCH | posts/{post}            | posts.update     | App\Http\Controllers\PostsController@update                       | web,auth     |
+|        | DELETE    | posts/{post}            | posts.destroy    | App\Http\Controllers\PostsController@destroy                      | web,auth     |
+|        | GET|HEAD  | posts/{post}/edit       | posts.edit       | App\Http\Controllers\PostsController@edit                         | web,auth     |
+|        | GET|HEAD  | profiles                | profiles.index   | App\Http\Controllers\ProfilesController@index                     | web          |
+|        | POST      | profiles                | profiles.store   | App\Http\Controllers\ProfilesController@store                     | web          |
+|        | GET|HEAD  | profiles/create         | profiles.create  | App\Http\Controllers\ProfilesController@create                    | web          |
+|        | GET|HEAD  | profiles/{profile}      | profiles.show    | App\Http\Controllers\ProfilesController@show                      | web          |
+|        | DELETE    | profiles/{profile}      | profiles.destroy | App\Http\Controllers\ProfilesController@destroy                   | web          |
+|        | PUT|PATCH | profiles/{profile}      | profiles.update  | App\Http\Controllers\ProfilesController@update                    | web          |
+|        | GET|HEAD  | profiles/{profile}/edit | profiles.edit    | App\Http\Controllers\ProfilesController@edit                      | web          |
+|        | POST      | signup                  | signup.post      | App\Http\Controllers\Auth\RegisterController@register             | web,guest    |
+|        | GET|HEAD  | signup                  | signup.get       | App\Http\Controllers\Auth\RegisterController@showRegistrationForm | web,guest    |
+|        | GET|HEAD  | top                     |                  | App\Http\Controllers\PostsController@index                        | web          |
+|        | GET|HEAD  | users                   | users.index      | App\Http\Controllers\UsersController@index                        | web,auth     |
+|        | GET|HEAD  | users/{user}            | users.show       | App\Http\Controllers\UsersController@show                         | web,auth     |
++--------+-----------+-------------------------+------------------+-------------------------------------------------------------------+--------------+
+
+## /bbs/app/Http/Controllers/PostsController.php 追記
+```
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Post;
+use App\Comment;
+use Illuminate\Http\Request;
+
+class PostsController extends Controller
+{
+    /**
+     * Display a listing of the resource.
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function index()
+    {
+        $posts = Post::orderBy('id', 'desc')->get();
+        return view('top', compact('posts'));
+    }
+
+    /**
+     * Show the form for creating a new resource.
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function create()
+    {
+        $post = new Post();
+        return view('posts.create', compact('post'));
+    }
+
+    /**
+     * Store a newly created resource in storage.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\Response
+     */
+    public function store(Request $request)
+    {
+        //for image ref) https://qiita.com/maejima_f/items/7691aa9385970ba7e3ed
+        $this->validate($request, [
+            'title' => 'required',
+            'content' => 'required',
+            'image' => [
+                'required',
+                'file',
+                'mimes:jpeg,jpg,png'
+            ]
+        ]);
+        
+        // 入力情報の取得
+        $title = $request->input('title');
+        $content = $request->input('content');
+        $file =  $request->image;
+        
+        // https://qiita.com/ryo-program/items/35bbe8fc3c5da1993366
+        if($file){
+            // 現在時刻ともともとのファイル名を組み合わせてランダムなファイル名作成
+            $image = time() . $file->getClientOriginalName();
+            // アップロードするフォルダ名取得
+            $target_path = public_path('uploads/');
+            // アップロード処理
+            $file->move($target_path, $image);
+        }else{
+            $image = '';
+        }
+        
+        
+        // 入力情報をもとに新しいインスタンス作成
+        \Auth::user()->posts()->create(['title' => $title, 'content' => $content, 'image' => $image]);
+
+        //
+        // session(['flash_message' => 'プロフィールを作成しました']);
+        
+        // index action へリダイレクト
+        return redirect('/top')->with('flash_message', '新規画像投稿を完了しました。');
+    }
+
+    /**
+     * Display the specified resource.
+     *
+     * @param  \App\Post  $post
+     * @return \Illuminate\Http\Response
+     */
+    public function show(Post $post)
+    {
+        $comment = new Comment();
+        $comments = $post->comments()->get();
+        return view('posts.show', compact('post', 'comment', 'comments'));
+    }
+
+    /**
+     * Show the form for editing the specified resource.
+     *
+     * @param  \App\Post  $post
+     * @return \Illuminate\Http\Response
+     */
+    public function edit(Post $post)
+    {
+        if($post->user->id === \Auth::id()){
+            return view('posts.edit', compact('post'));
+        }else{
+            return redirect('/top');
+        }
+    }
+
+    /**
+     * Update the specified resource in storage.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @param  \App\Post  $post
+     * @return \Illuminate\Http\Response
+     */
+    public function update(Request $request, Post $post)
+    {
+        if($post->user->id === \Auth::id()){
+            //for image ref) https://qiita.com/maejima_f/items/7691aa9385970ba7e3ed
+            $this->validate($request, [
+                'title' => 'required',
+                'content' => 'required',
+                'image' => [
+                    'file',
+                    'mimes:jpeg,jpg,png'
+                ]
+            ]);
+            
+            // 入力情報の取得
+            $title = $request->input('title');
+            $content = $request->input('content');
+            $file =  $request->image;
+            
+            // https://qiita.com/ryo-program/items/35bbe8fc3c5da1993366
+            if($file){
+                // 現在時刻ともともとのファイル名を組み合わせてランダムなファイル名作成
+                $image = time() . $file->getClientOriginalName();
+                // アップロードするフォルダ名取得
+                $target_path = public_path('uploads/');
+                // アップロード処理
+                $file->move($target_path, $image);
+            }else{
+                $image = $post->image;
+            }
+            
+            
+            // 入力情報をもとにインスタンスのプロパティ変更
+            $post->title = $title;
+            $post->content = $content;
+            $post->image = $image;
+    
+            // 更新
+            $post->save();
+            
+            // session(['flash_message' => 'プロフィールを作成しました']);
+            
+            return redirect('/top')->with('flash_message', '投稿ID: ' . $post->id . 'の画像投稿を更新しました。');
+        }else{
+            return redirect('/top');
+        }
+    }
+
+    /**
+     * Remove the specified resource from storage.
+     *
+     * @param  \App\Post  $post
+     * @return \Illuminate\Http\Response
+     */
+    public function destroy(Post $post)
+    {
+        if($post->user->id === \Auth::id()){
+            $post->delete();
+            return redirect('/top')->with('flash_message', '投稿id: ' . $post->id . 'の画像投稿を削除しました。');
+        }else{
+            return redirect('/top');
+        }
+    }
+}
+
+```
+
+## /bbs/resources/views/posts/show.blade.php 変形
+```
+@extends('layouts.app')
+@section('title', '投稿ID: ' . $post->id . 'の詳細')
+@section('content')
+    <div class="text-center">
+        <h1>投稿ID: {{ $post->id }} の詳細</h1>
+    </div>
+    <table class="table table-bordered table-striped">
+        <tr>
+            <th>ID</th>
+            <th>名前</th>
+            <th>タイトル</th>
+            <th>内容</th>
+            <th>画像</th>
+            <th>投稿日時</th>
+        </tr>
+        <tr>
+            <td>{{ $post->id }}</td>
+            <td>{{ $post->user->name }}</td>
+            <td>{{ $post->title }}</td>
+            <td>{{ $post->content }}</td>
+            <td><img src="{{ asset('uploads')}}/{{$post->image}}" alt="{{ $post->image }}"></td>
+            <td>{{ $post->created_at }}</td>
+        </tr>
+    </table>
+
+    @if($post->user->id === Auth::id())
+    <div class="row mt-3">
+        {!! link_to_route('posts.edit', '編集' , ['id' => $post->id ],['class' => 'btn btn-primary col-sm-6']) !!}
+        
+        {!! Form::open(['route' => ['posts.destroy', 'id' => $post->id ], 'method' => 'DELETE', 'class' => 'col-sm-6']) !!}
+            {!! Form::submit('削除', ['class' => 'btn btn-danger btn-block col-sm-12']) !!}
+        {!! Form::close() !!}
+
+    </div>
+    @endif
+    
+    <div class="text-center mt-5">
+        <h2>コメント一覧</h2>
+    </div>
+    <div class="row">
+        <div class="col-sm-6 offset-sm-3">
+
+            {!! Form::open(['route' => ['post.comment', 'id' => $post->id ]]) !!}
+                <div class="form-group">
+                    {!! Form::label('content', 'コメント') !!}
+                    {!! Form::text('content', old('content'), ['class' => 'form-control']) !!}
+                </div>
+                {!! Form::submit('コメント投稿', ['class' => 'btn btn-primary btn-block']) !!}
+            {!! Form::close() !!}
+        </div>
+    </div>
+    @if(count($comments) !== 0)
+    <table class="table table-bordered table-striped mt-3">
+        <tr>
+            <th>ID</th>
+            <th>名前</th>
+            <th>コメント内容</th>
+            <th>投稿日時</th>
+        </tr>
+        @foreach($comments as $comment)
+        <tr>
+            <td>{{ $comment->id }}</td>
+            <td>{{ $comment->user->name }}</td>
+            <td>{{ $comment->content }}</td>
+            <td>{{ $comment->created_at }}</td>
+        </tr>
+        @endforeach
+    </table>
+    @else
+    <div class="row mt-5">
+        <div class="col-sm-12 text-center">
+            コメントはまだありません。
+        </div>
+    </div>
+    @endif;
+
+@endsection
+```
+
+## //bbs/app/Http/Controllers/CommentsController.php 追記
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Comment;
+use App\Post;
+use Illuminate\Http\Request;
+
+class CommentsController extends Controller
+{
+    /**
+     * Display a listing of the resource.
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function index()
+    {
+        //
+    }
+
+    /**
+     * Show the form for creating a new resource.
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function create()
+    {
+        //
+    }
+
+    /**
+     * Store a newly created resource in storage.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\Response
+     */
+    public function store(Request $request, $id)
+    {
+        
+        $this->validate($request, [
+            'content' => 'required',
+        ]);
+        
+        // 入力情報の取得
+        $content = $request->input('content');
+       
+        // 入力情報をデータベースに保存
+        // $post->comments()->create(['content' => $content]);
+        \Auth::user()->add_comment($id, $content);
+
+        //
+        // session(['flash_message' => 'プロフィールを作成しました']);
+        
+        // リダイレクト
+        return redirect('/posts/' . $id)->with('flash_message', '新規コメント投稿を完了しました。');
+        
+        
+        
+    }
+
+    /**
+     * Display the specified resource.
+     *
+     * @param  \App\Comment  $comment
+     * @return \Illuminate\Http\Response
+     */
+    public function show(Comment $comment)
+    {
+        //
+    }
+
+    /**
+     * Show the form for editing the specified resource.
+     *
+     * @param  \App\Comment  $comment
+     * @return \Illuminate\Http\Response
+     */
+    public function edit(Comment $comment)
+    {
+        //
+    }
+
+    /**
+     * Update the specified resource in storage.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @param  \App\Comment  $comment
+     * @return \Illuminate\Http\Response
+     */
+    public function update(Request $request, Comment $comment)
+    {
+        //
+    }
+
+    /**
+     * Remove the specified resource from storage.
+     *
+     * @param  \App\Comment  $comment
+     * @return \Illuminate\Http\Response
+     */
+    public function destroy(Comment $comment)
+    {
+        //
+    }
+}
+
+```
+
+## Git
+git add .
+git commit -m "コメント投稿、一覧表示完了"
+git push origin main

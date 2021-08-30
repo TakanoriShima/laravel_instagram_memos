@@ -1,0 +1,415 @@
+--- 会員プロフィールの作成
+-- 20210824 by Takanori Shima
+
+## Profile モデルの作成
+php artisan make:model -m Profile
+
+## /bbs/database/migrations/2021_08_24_191906_create_profiles_table.php 編集
+```
+        Schema::create('profiles', function (Blueprint $table) {
+            $table->bigIncrements('id');
+            $table->unsignedBigInteger('user_id')->unique();
+            $table->string('nickname');
+            $table->string('gender');
+            $table->text('introduction');
+            $table->string('image');
+            $table->timestamps();
+
+            // 外部キー制約
+            $table->foreign('user_id')->references('id')->on('users');
+        });
+```
+
+## マイグレーション
+php artisan migrate
+
+
+mysql> desc profiles;
+-+--------------+---------------------+------+-----+---------+----------------+
+-| Field        | Type                | Null | Key | Default | Extra          |
+-+--------------+---------------------+------+-----+---------+----------------+
+-| id           | bigint(20) unsigned | NO   | PRI | NULL    | auto_increment |
+-| user_id      | bigint(20) unsigned | NO   | UNI | NULL    |                |
+-| nickname     | varchar(191)        | NO   |     | NULL    |                |
+-| gender       | varchar(191)        | NO   |     | NULL    |                |
+-| introduction | text                | NO   |     | NULL    |                |
+-| image        | varchar(191)        | NO   |     | NULL    |                |
+-| created_at   | timestamp           | YES  |     | NULL    |                |
+-| updated_at   | timestamp           | YES  |     | NULL    |                |
+-+--------------+---------------------+------+-----+---------+----------------+
+
+## /bbs/app/User.php 編集
+```
+<?php
+
+namespace App;
+
+use Illuminate\Notifications\Notifiable;
+use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Illuminate\Foundation\Auth\User as Authenticatable;
+use App\Profile;
+
+class User extends Authenticatable
+{
+    use Notifiable;
+
+    /**
+     * The attributes that are mass assignable.
+     *
+     * @var array
+     */
+    protected $fillable = [
+        'name', 'email', 'password',
+    ];
+
+    /**
+     * The attributes that should be hidden for arrays.
+     *
+     * @var array
+     */
+    protected $hidden = [
+        'password', 'remember_token',
+    ];
+
+    /**
+     * The attributes that should be cast to native types.
+     *
+     * @var array
+     */
+    protected $casts = [
+        'email_verified_at' => 'datetime',
+    ];
+    
+    // 「１対１」→ メソッド名は単数形
+    public function profile()
+    {
+        // Profileモデルのデータを引っ張てくる
+        return $this->hasOne(Profile::class);
+    }
+}
+```
+
+## /bbs/app/Profile.php 編集
+```
+<?php
+
+namespace App;
+
+use Illuminate\Database\Eloquent\Model;
+use App\User;
+
+class Profile extends Model
+{
+    /**
+     * The attributes that are mass assignable.
+     *
+     * @var array
+     */
+    protected $fillable = [
+        'nickname', 'gender', 'introduction', 'image',
+    ];
+    
+    // 「１対１」→ メソッド名は単数形
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+}
+
+
+```
+
+## tinker でダミープロフィル作成
+php artisan tinker
+
+use App\User
+use App\Profile
+$user = User::first()
+$user->profile()->get()
+$user->profile()->create(['nickname' => 'takachan', 'gender' => 'man', 'introduction' => 'hello', 'image' => '1.jpg'])
+$user->profile()->get()
+$profile = Profile::first()
+$profile->user()->get()
+
+## Git
+git add .
+git commit -m "プロフィールモデル作成。ダミープロフィール作成"
+git push origin main
+
+## ProfilesController作成
+php artisan make:controller ProfilesController --resource --model=Profile
+
+## /bbs/routes/web.php 編集
+```
+// プロフィール関係
+Route::resource('profiles', 'ProfilesController');
+```
+
+## 最新のルーティング確認
+php artisan route:list
+
+-+--------+-----------+-------------------------+------------------+-------------------------------------------------------------------+--------------+
+-| Domain | Method    | URI                     | Name             | Action                                                            | Middleware   |
+-+--------+-----------+-------------------------+------------------+-------------------------------------------------------------------+--------------+
+-|        | GET|HEAD  | /                       |                  | App\Http\Controllers\ToppagesController@index                     | web          |
+-|        | GET|HEAD  | api/user                |                  | Closure                                                           | api,auth:api |
+-|        | GET|HEAD  | login                   | login            | App\Http\Controllers\Auth\LoginController@showLoginForm           | web,guest    |
+-|        | POST      | login                   | login.post       | App\Http\Controllers\Auth\LoginController@login                   | web,guest    |
+-|        | GET|HEAD  | logout                  | logout.get       | App\Http\Controllers\Auth\LoginController@logout                  | web          |
+-|        | GET|HEAD  | profiles                | profiles.index   | App\Http\Controllers\ProfilesController@index                     | web          |
+-|        | POST      | profiles                | profiles.store   | App\Http\Controllers\ProfilesController@store                     | web          |
+-|        | GET|HEAD  | profiles/create         | profiles.create  | App\Http\Controllers\ProfilesController@create                    | web          |
+-|        | PUT|PATCH | profiles/{profile}      | profiles.update  | App\Http\Controllers\ProfilesController@update                    | web          |
+-|        | GET|HEAD  | profiles/{profile}      | profiles.show    | App\Http\Controllers\ProfilesController@show                      | web          |
+-|        | DELETE    | profiles/{profile}      | profiles.destroy | App\Http\Controllers\ProfilesController@destroy                   | web          |
+-|        | GET|HEAD  | profiles/{profile}/edit | profiles.edit    | App\Http\Controllers\ProfilesController@edit                      | web          |
+-|        | POST      | signup                  | signup.post      | App\Http\Controllers\Auth\RegisterController@register             | web,guest    |
+-|        | GET|HEAD  | signup                  | signup.get       | App\Http\Controllers\Auth\RegisterController@showRegistrationForm | web,guest    |
+-|        | GET|HEAD  | top                     |                  | Closure                                                           | web          |
+-|        | GET|HEAD  | users                   | users.index      | App\Http\Controllers\UsersController@index                        | web,auth     |
+-|        | GET|HEAD  | users/{user}            | users.show       | App\Http\Controllers\UsersController@show                         | web,auth     |
++--------+-----------+-------------------------+------------------+-------------------------------------------------------------------+--------------+
+
+## /bbs/app/Http/Controllers/ProfilesController.php 編集
+```
+    public function create()
+    {
+        $profile = new Profile();
+        return view('profiles.create', compact('profile'));
+    }
+```
+
+## /bbs/resources/views/profiles/create.blade.php 新規作成・編集
+```
+@extends('layouts.app')
+@section('title', 'プロフィール登録')
+@section('content')
+    <div class="text-center">
+        <h1>{{ Auth::user()->name }}さんのプロフィール作成</h1>
+    </div>
+
+    <div class="row">
+        <div class="col-sm-6 offset-sm-3">
+
+            {!! Form::open(['route' => ['profiles.store'], 'files' => true]) !!}
+                <div class="form-group">
+                    {!! Form::label('nickname', 'ニックネーム') !!}
+                    {!! Form::text('nickname', old('nickname'), ['class' => 'form-control']) !!}
+                </div>
+
+                <div class="form-group">
+                    {!! Form::label('man', '男性') !!}
+                    {!! Form::radio('gender', 'man', true, ['id'=>'man']) !!}
+                    {!! Form::label('woman', '女性') !!}
+                    {!! Form::radio('gender', 'woman', false, ['id'=>'woman']) !!}
+                </div>
+
+                <div class="form-group">
+                    {!! Form::label('introduction', '自己紹介') !!}
+                    {!! Form::text('introduction',  old('introduction'), ['class' => 'form-control']) !!}
+                </div>
+
+                <div class="form-group">
+                    {!! Form::label('image', 'アバターアイコン') !!}
+                    {!! Form::file('image') !!}
+                </div>
+
+                {!! Form::submit('プロフィール登録', ['class' => 'btn btn-primary btn-block']) !!}
+            {!! Form::close() !!}
+        </div>
+    </div>
+@endsection
+```
+
+## /bbs/resources/views/layouts/app.blade.php 変形
+```
+<!DOCTYPE html>
+<html lang="ja">
+    <head>
+        <meta charset="utf-8">
+        <title> @yield('title')</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+        <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.2.1/css/bootstrap.min.css">
+        <link rel="icon" href="{{ asset('images/favicon.ico')}} ">
+        <link rel="stylesheet" href="{{ asset('css/style.css') }}">
+    </head>
+
+    <body>
+        <header class="mb-4">
+            <nav class="navbar navbar-expand-sm navbar-dark bg-info">
+                @if(Auth::check())
+                <a class="navbar-brand" href="/top">会員制写真投稿サイト</a>
+                @else
+                <a class="navbar-brand" href="/">会員制写真投稿サイト</a>
+                @endif
+                <button type="button" class="navbar-toggler" data-toggle="collapse" data-target="#nav-bar">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                
+                <div class="collapse navbar-collapse" id="nav-bar">
+                    <ul class="navbar-nav mr-auto"></ul>
+                    <ul class="navbar-nav">
+                        @if(Auth::check())
+                        <li class="navbar-text text-success bg-white p-2 mr-5">{{ Auth::user()->name }}</li>
+                        <li>{!! link_to_route('users.index', '会員一覧', [],['class' => 'nav-link']) !!}</li>
+                        @if(!Auth::user()->profile()->get()->first())
+                        <li>{!! link_to_route('profiles.create', 'プロフィール登録', [], ['class' => 'nav-link']) !!}</li>
+                        @else
+                        <li>{!! link_to_route('profiles.edit', 'プロフィール編集', ['id' => Auth::user()->profile()->get()->first()->id ], ['class' => 'nav-link']) !!}</li>
+                        @endif
+                         <li>{!! link_to_route('logout.get', 'ログアウト', [],['class' => 'nav-link']) !!}</li>
+                        @endif
+                    </ul>
+                </div>
+            </nav>
+        </header>
+        
+        <div class="container">
+            @include('commons.error_messages')
+            @yield('content')
+        </div>
+        
+        <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.6/umd/popper.min.js"></script>
+        <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.2.1/js/bootstrap.min.js"></script>
+        <script defer src="https://use.fontawesome.com/releases/v5.7.2/js/all.js"></script>
+        <script src="{{ asset('js/script.js') }}"></script>
+    </body>
+</html>
+```
+
+## /bbs/app/Http/Controllers/UsersController.php 変更
+```
+<?php
+
+namespace App\Http\Controllers;
+
+use App\User;
+use App\Profile;
+use Illuminate\Http\Request;
+
+class UsersController extends Controller
+{
+    /**
+     * Display a listing of the resource.
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function index()
+    {
+        $users = User::all();
+        return view('users.index', compact('users'));
+    }
+
+    /**
+     * Show the form for creating a new resource.
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function create()
+    {
+        //
+    }
+
+    /**
+     * Store a newly created resource in storage.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\Response
+     */
+    public function store(Request $request)
+    {
+        //
+    }
+
+    /**
+     * Display the specified resource.
+     *
+     * @param  \App\User  $user
+     * @return \Illuminate\Http\Response
+     */
+    public function show(User $user)
+    {
+        // dd($user->name);
+        $profile = $user->profile()->get()->first();
+        // dd($profile->nickname);
+        // dd($profile->nickname);
+        return view('users.show', compact('user', 'profile'));
+    }
+
+    /**
+     * Show the form for editing the specified resource.
+     *
+     * @param  \App\User  $user
+     * @return \Illuminate\Http\Response
+     */
+    public function edit(User $user)
+    {
+        //
+    }
+
+    /**
+     * Update the specified resource in storage.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @param  \App\User  $user
+     * @return \Illuminate\Http\Response
+     */
+    public function update(Request $request, User $user)
+    {
+        //
+    }
+
+    /**
+     * Remove the specified resource from storage.
+     *
+     * @param  \App\User  $user
+     * @return \Illuminate\Http\Response
+     */
+    public function destroy(User $user)
+    {
+        //
+    }
+}
+
+```
+
+## /bbs/resources/views/users/show.blade.php 変形
+```
+@extends('layouts.app')
+@section('title', $user->name . 'さんのマイページ')
+@section('content')
+    <div class="text-center">
+        <h1>{{ $user->name }} さんのマイページ</h1>
+    </div>
+    @if($profile)
+    <div class="row mt-3">
+        <div class="offset-sm-2 col-sm-3">
+            <img src="{{ asset('uploads')}}/{{ $profile->image }}" alt="no image" class="image_icon">
+        </div>
+        <div class="offset-sm-1 col-sm-3 pt-3">
+            <p>ニックネーム / {{ $profile->nickname }}</p>
+            <p>性別 / {{ $profile->gender === 'man' ? '男性' : '女性' }}</p>
+            <p>自己紹介 / {{ $profile->introduction }}</p>
+        </div>
+    </div>
+    @else
+    <div class="row mt-5">
+        <p class="col-sm-12 text-center">プロフィールは未設定です</p>
+    </div>
+    @endif
+@endsection
+```
+
+## /bbs/public/css/style.css 追記
+```
+.image_icon {
+    width: 100%;
+}
+
+```
+
+## Git 
+git add .
+git commit -m "プロフィール新規登録完了"
+git push origin main

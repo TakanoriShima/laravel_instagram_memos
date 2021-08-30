@@ -1,0 +1,196 @@
+--- 19_投稿一覧にアバター画像表示
+-- 20210825 by Takanori Shima
+
+## /bbs/resources/views/top.blade.php　編集
+```
+@extends('layouts.app')
+@section('title',  '投稿一覧')
+@section('content')
+    <div class="text-center">
+        <h1>投稿一覧</h1>
+        <div class="row mt-3">
+            <table class="table table-bordered table-striped">
+                <tr>
+                    <th>ID</th>
+                    <th>名前</th>
+                    <th>タイトル</th>
+                    <th>内容</th>
+                    <th>投稿日時</th>
+                </tr>
+                @foreach($posts as $post)
+                <tr>
+                    <td>{!! link_to_route('posts.show', $post->id , ['id' => $post->id ],[]) !!}</td>
+                    <td>
+                        @if($post->user->profile)
+                        <img src="{{ asset('uploads')}}/{{ $post->user->profile->image }}" alt="{{ $post->user->profile->image }}" class="avatar">
+                        @else
+                        <img src="{{ asset('images/no_image.jpg') }}" alt="アバター画像は未設定です" class="avatar">
+                        @endif
+                        {!! link_to_route('users.show', $post->user->name , ['id' => $post->user->id ],[]) !!}
+                    </td>
+                    <td>{{ $post->title }}</td>
+                    <td>{{ $post->content }}</td>
+                    <td>{{ $post->created_at }}</td>
+                </tr>
+                @endforeach
+            </table>
+        </div>
+    </div>
+@endsection
+
+```
+
+## /bbs/resources/views/users/index.blade.php 変更
+```
+@extends('layouts.app')
+@section('title', '会員一覧')
+@section('content')
+    <div class="text-center">
+        <h1>会員一覧</h1>
+    </div>
+    <div class="row mt-3">
+        <table class="table table-bordered table-striped">
+            <tr>
+                <th>ID</th>
+                <th>名前</th>
+                <th>メールアドレス</th>
+                <th>登録日時</th>
+            </tr>
+            @foreach($users as $user)
+            <tr>
+                <td>{!! link_to_route('users.show', $user->id , ['id' => $user->id ],[]) !!}</td>
+                <td>
+                    @if($user->profile)
+                    <img src="{{ asset('uploads')}}/{{ $user->profile->image }}" alt="{{ $user->profile->image }}" class="avatar">
+                    @else
+                    <img src="{{ asset('images/no_image.jpg') }}" alt="アバター画像は未設定です" class="avatar">
+                    @endif
+                    {!! link_to_route('users.show', $user->name , ['id' => $user->id ],[]) !!}
+                </td>
+                <td>{{ $user->email }}</td>
+                <td>{{ $user->created_at }}</td>
+            </tr>
+            @endforeach
+        </table>
+    </div>
+@endsection
+```
+
+## /bbs/resources/views/posts/show.blade.php
+```
+@extends('layouts.app')
+@section('title', '投稿ID: ' . $post->id . 'の詳細')
+@section('content')
+    <div class="text-center">
+        <h1>投稿ID: {{ $post->id }} の詳細</h1>
+    </div>
+    <table class="table table-bordered table-striped">
+        <tr>
+            <th>ID</th>
+            <th>名前</th>
+            <th>タイトル</th>
+            <th>内容</th>
+            <th>画像</th>
+            <th>投稿日時</th>
+            <th>いいね/いいいね解除</th>
+            <th>いいねの数</th>
+            <th>いいねした人の一覧</th>
+        </tr>
+        <tr>
+            <td>{{ $post->id }}</td>
+            <td>{!! link_to_route('users.show', $post->user->name , ['id' => $post->user->id ],[]) !!}</td>
+            <td>{{ $post->title }}</td>
+            <td>{{ $post->content }}</td>
+            <td><img src="{{ asset('uploads')}}/{{$post->image}}" alt="{{ $post->image }}"></td>
+            <td>{{ $post->created_at }}</td>
+            <td>
+                @if(!Auth::user()->is_favorite($post->id))
+                {!! Form::open(['route' => ['favorites.favorite', 'id' => $post->id ]]) !!}
+                    {!! Form::submit('いいね', ['class' => 'btn btn-primary btn-block']) !!}
+                {!! Form::close() !!}
+                @else
+                {!! Form::open(['route' => ['favorites.unfavorite', 'id' => $post->id ], 'method' => 'DELETE']) !!}
+                    {!! Form::submit('いいね解除', ['class' => 'btn btn-danger btn-block']) !!}
+                {!! Form::close() !!}
+                @endif
+            </td>
+            <td>{{ count($favorite_users) }}いいね</td>
+            <td>
+                <ul>
+                    @foreach($favorite_users as $user)
+                    <li>{!! link_to_route('users.show', $user->name , ['id' => $user->id ],[]) !!}</li>
+                    @endforeach
+                </ul>
+            </td>
+            <td></td>
+        </tr>
+    </table>
+
+    @if($post->user->id === Auth::id())
+    <div class="row mt-3">
+        {!! link_to_route('posts.edit', '編集' , ['id' => $post->id ],['class' => 'btn btn-primary col-sm-6']) !!}
+        
+        {!! Form::open(['route' => ['posts.destroy', 'id' => $post->id ], 'method' => 'DELETE', 'class' => 'col-sm-6']) !!}
+            {!! Form::submit('削除', ['class' => 'btn btn-danger btn-block col-sm-12']) !!}
+        {!! Form::close() !!}
+
+    </div>
+    @endif
+    
+    <div class="text-center mt-5">
+        <h2>コメント一覧</h2>
+    </div>
+    <div class="row">
+        <div class="col-sm-6 offset-sm-3">
+
+            {!! Form::open(['route' => ['post.comment', 'id' => $post->id ]]) !!}
+                <div class="form-group">
+                    {!! Form::label('content', 'コメント') !!}
+                    {!! Form::text('content', old('content'), ['class' => 'form-control']) !!}
+                </div>
+                {!! Form::submit('コメント投稿', ['class' => 'btn btn-primary btn-block']) !!}
+            {!! Form::close() !!}
+        </div>
+    </div>
+    @if(count($comments) !== 0)
+    <table class="table table-bordered table-striped mt-3">
+        <tr>
+            <th>ID</th>
+            <th>名前</th>
+            <th>コメント内容</th>
+            <th>投稿日時</th>
+        </tr>
+        @foreach($comments as $comment)
+        <tr>
+            <td>{{ $comment->id }}</td>
+            <td>{{ $comment->user->name }}</td>
+            <td>{{ $comment->content }}</td>
+            <td>{{ $comment->created_at }}</td>
+        </tr>
+        @endforeach
+    </table>
+    @else
+    <div class="row mt-5">
+        <div class="col-sm-12 text-center">
+            コメントはまだありません。
+        </div>
+    </div>
+    @endif;
+
+@endsection
+```
+
+## /bbs/public/images/no_image.jpg　追加
+
+## /bbs/public/css/style.css　追記
+```
+.avatar {
+    width: 50px;
+}
+
+```
+
+## Git
+git add .
+git commit -m "各種一覧にアバター画像表示、各種リンク設定追加"
+git push origin main

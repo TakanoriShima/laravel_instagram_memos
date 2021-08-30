@@ -1,0 +1,151 @@
+--- 画像投稿編集・削除
+-- 20210825 by Takanori Shima
+
+## /bbs/resources/views/posts/show.blade.php 編集
+```
+@section('content')
+    <div class="text-center">
+        <h1>投稿ID: {{ $post->id }} の詳細</h1>
+    </div>
+    <table class="table table-bordered table-striped">
+        <tr>
+            <th>ID</th>
+            <th>名前</th>
+            <th>タイトル</th>
+            <th>内容</th>
+            <th>画像</th>
+            <th>投稿日時</th>
+        </tr>
+        <tr>
+            <td>{{ $post->id }}</td>
+            <td>{{ $post->user->name }}</td>
+            <td>{{ $post->title }}</td>
+            <td>{{ $post->content }}</td>
+            <td><img src="{{ asset('uploads')}}/{{$post->image}}" alt="{{ $post->image }}"></td>
+            <td>{{ $post->created_at }}</td>
+        </tr>
+    </table>
+
+    @if($post->user->id === Auth::id())
+    <div class="row mt-3">
+        {!! link_to_route('posts.edit', '編集' , ['id' => $post->id ],['class' => 'btn btn-primary col-sm-6']) !!}
+        
+        {!! Form::open(['route' => ['posts.destroy', 'id' => $post->id ], 'method' => 'DELETE', 'class' => 'col-sm-6']) !!}
+            {!! Form::submit('削除', ['class' => 'btn btn-danger btn-block col-sm-12']) !!}
+        {!! Form::close() !!}
+
+    </div>
+    @endif
+
+@endsection
+```
+
+## /bbs/app/Http/Controllers/PostsController.php 編集
+```
+    public function edit(Post $post)
+    {
+        if($post->user->id === \Auth::id()){
+            return view('posts.edit', compact('post'));
+        }else{
+            return redirect('/top');
+        }
+    }
+
+    public function destroy(Post $post)
+    {
+        if($post->user->id === \Auth::id()){
+            $post->delete();
+            return redirect('/top')->with('flash_message', '投稿id: ' . $post->id . 'の画像投稿を削除しました。');
+        }else{
+            return redirect('/top');
+        }
+    }
+```
+
+## /bbs/resources/views/posts/edit.blade.php 新規作成・編集
+```
+@extends('layouts.app')
+@section('title', '投稿ID: ' . $post->id . 'の編集')
+@section('content')
+    <div class="text-center">
+        <h1>投稿ID:  {{ $post->id }}の編集</h1>
+    </div>
+
+    <div class="row">
+        <div class="col-sm-6 offset-sm-3">
+
+            {!! Form::open(['route' => ['posts.update', 'id' => $post->id ], 'files' => true, 'method' => 'PUT']) !!}
+                <div class="form-group">
+                    {!! Form::label('title', 'タイトル') !!}
+                    {!! Form::text('title', $post->title ? $post->title : old('title'), ['class' => 'form-control']) !!}
+                </div>
+                <div class="form-group">
+                    {!! Form::label('content', '内容') !!}
+                    {!! Form::text('content',  $post->content ? $post->content : old('content'), ['class' => 'form-control']) !!}
+                </div>
+
+                <div class="form-group">
+                    {!! Form::label('image', '画像') !!}
+                    {!! Form::file('image') !!}
+                </div>
+
+                {!! Form::submit('更新', ['class' => 'btn btn-primary btn-block']) !!}
+            {!! Form::close() !!}
+        </div>
+    </div>
+@endsection
+```
+## /bbs/app/Http/Controllers/PostsController.php 編集
+```
+    public function update(Request $request, Post $post)
+    {
+        if($post->user->id === \Auth::id()){
+            //for image ref) https://qiita.com/maejima_f/items/7691aa9385970ba7e3ed
+            $this->validate($request, [
+                'title' => 'required',
+                'content' => 'required',
+                'image' => [
+                    'file',
+                    'mimes:jpeg,jpg,png'
+                ]
+            ]);
+            
+            // 入力情報の取得
+            $title = $request->input('title');
+            $content = $request->input('content');
+            $file =  $request->image;
+            
+            // https://qiita.com/ryo-program/items/35bbe8fc3c5da1993366
+            if($file){
+                // 現在時刻ともともとのファイル名を組み合わせてランダムなファイル名作成
+                $image = time() . $file->getClientOriginalName();
+                // アップロードするフォルダ名取得
+                $target_path = public_path('uploads/');
+                // アップロード処理
+                $file->move($target_path, $image);
+            }else{
+                $image = $post->image;
+            }
+            
+            
+            // 入力情報をもとに新しいインスタンス作成
+            $post->title = $title;
+            $post->content = $content;
+            $post->image = $image;
+    
+            // 更新
+            $post->save();
+            
+            // session(['flash_message' => 'プロフィールを作成しました']);
+            
+            return redirect('/top')->with('flash_message', '投稿ID: ' . $post->id . 'の画像投稿を更新しました。');
+        }else{
+            return redirect('/top');
+        }
+    }
+```
+
+## Git
+git add .
+git commit -m "画像投稿編集・削除完了"
+git push origin main
