@@ -14,7 +14,7 @@ sudo sh -c "echo 3 > /proc/sys/vm/drop_caches"
 composer require "laravelcollective/html":"5.8.*"
 ```
 ## 3. Laravel Collective を用いてビューを変形
-### /instagram/resources/views/welcome.blade.php を Laravel Collective 書式を用いて変形
+### resources/views/welcome.blade.php を Laravel Collective 書式を用いて変形
 
 ```
 @extends('layouts.app')
@@ -35,7 +35,7 @@ composer require "laravelcollective/html":"5.8.*"
 第4引数：HTML タグの属性を配列形式で指定（今回は Bootstrap のボタンとして表示するためのクラスを指定）
 ```
 
-### /instagram/resources/views/top.blade.php 変形
+### resources/views/top.blade.php 変形
 ```
 @extends('layouts.app')
 @section('title', '会員制写真投稿サイト')
@@ -47,7 +47,7 @@ composer require "laravelcollective/html":"5.8.*"
 @endsection
 ```
 
-### /instagram/resources/views/auth/login.blade.php 変形
+### resources/views/auth/login.blade.php 変形
 ```
 @extends('layouts.app')
 @section('title', 'ログイン')
@@ -77,7 +77,7 @@ composer require "laravelcollective/html":"5.8.*"
 @endsection
 ```
 
-### /instagram/resources/views/auth/register.blade.php 変形
+### resources/views/auth/register.blade.php 変形
 ```
 @extends('layouts.app')
 @section('title', '新規会員登録')
