@@ -9,7 +9,7 @@
 composer create-project --prefer-dist laravel/laravel instagram "5.8.*"
 ```
 
-## 2. /bbs/app/Http/Middleware/TrustProxies.php 変更
+## 2. app/Http/Middleware/TrustProxies.php 変更
 * Cloud9の環境ではAWSのロードバランサが使用されているため、LaravelがURLをうまく生成できない問題あり 
 ```
 protected $proxies = '**'; // 全プロキシを信用
