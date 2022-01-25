@@ -14,7 +14,7 @@ mysql> exit;
 ```
 
 ## 2. Laravelアプリで使用するデータベース情報を変更
-### /bbs/.env の編集
+### .env の編集
 ```
 DB_CONNECTION=mysql
 DB_HOST=127.0.0.1
@@ -41,11 +41,11 @@ php artisan tinker
 > Exit: Goodbye
 
 ## 4. タイムゾーン設定
-### /bbs/config/app.php 編集
+### config/app.php 70行目附近を編集
     'timezone' => 'Asia/Tokyo',
     
 ## 5. テーブル設計前の初期設定
-### /bbs/app/Providers/AppServiceProvider.php 編集
+### app/Providers/AppServiceProvider.php 編集
     public function boot()
     {
         \Schema::defaultStringLength(191);
