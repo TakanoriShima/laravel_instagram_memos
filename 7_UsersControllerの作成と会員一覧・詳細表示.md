@@ -2,14 +2,14 @@
 <p style='text-align: right;'> &copy; 20210824 by Takanori Shima </p>
 
 ```
-* 以下、Cloud9上でターミナルを起動してbbsフォルダ内でコマンドを打つ *
+* 以下、Cloud9上でターミナルを起動してinstagramフォルダ内でコマンドを打つ *
 ```
 ## 1. UsersController作成
 ```
 php artisan make:controller UsersController --resource --model=User
 ```
 
-## 2. /bbs/app/Http/Controllers/UsersController.php の編集
+## 2. /instagram/app/Http/Controllers/UsersController.php の編集
 ### index, showアクションだけ残して他のアクションは削除
 ```
 <?php
@@ -44,7 +44,7 @@ class UsersController extends Controller
 }
 
 ```
-## 3. /bbs/routes/web.php 追記
+## 3. /instagram/routes/web.php 追記
 ```
 // 一般ユーザー
 Route::group(['middleware' => ['guest']], function () {
@@ -98,7 +98,7 @@ php artisan route:list
 +--------+----------+--------------+-------------+-------------------------------------------------------------------+--------------+
 ```
 
-## 5. /bbs/app/Http/Controllers/UsersController.php 編集
+## 5. /instagram/app/Http/Controllers/UsersController.php 編集
 ``` 
     /**
      * Display a listing of the resource.
@@ -126,7 +126,7 @@ php artisan route:list
     }
 ```
 
-## 6. /bbs/resources/views/users/index.blade.php 新規作成・編集
+## 6. /instagram/resources/views/users/index.blade.php 新規作成・編集
 ```
 @extends('layouts.app')
 @section('title', '会員一覧')
@@ -156,7 +156,7 @@ php artisan route:list
 ```
 
 
-## 7. /bbs/resources/views/users/show.blade.php 新規作成・編集
+## 7. /instagram/resources/views/users/show.blade.php 新規作成・編集
 ```
 @extends('layouts.app')
 @section('title', $user->name . 'さんのマイページ')
@@ -167,7 +167,7 @@ php artisan route:list
 @endsection
 ```
 
-## 8. /bbs/resources/views/layouts/app.blade.php 変形
+## 8. /instagram/resources/views/layouts/app.blade.php 変形
 ```
 <!DOCTYPE html>
 <html lang="ja">
@@ -219,7 +219,7 @@ php artisan route:list
 </html>
 ```
 
-## 9. /bbs/resources/views/top.blade.php 変形
+## 9. /instagram/resources/views/top.blade.php 変形
 ```
 @extends('layouts.app')
 @section('title',  '投稿一覧')
@@ -230,7 +230,7 @@ php artisan route:list
 @endsection
 ```
 
-## 10. /bbs/public/css/style.css 追記
+## 10. /instagram/public/css/style.css 追記
 ```
 @charset "utf-8";
 h1 {

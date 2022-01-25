@@ -3,7 +3,7 @@
 <p style='text-align: right;'> &copy; 20210831 by Takanori Shima </p>
 
 ```
-* 以下、Cloud9上でターミナルを起動してbbsフォルダ内でコマンドを打つ *
+* 以下、Cloud9上でターミナルを起動してinstagramフォルダ内でコマンドを打つ *
 ```
 
 ## 1. コマンドラインツールのインストール
@@ -23,7 +23,7 @@ heroku login -i
 
 ## 3. Herokuアプリ作成
 ```
-heroku create quark2galaxy-laravel-bbs
+heroku create quark2galaxy-laravel-instagram
 ```
 
 ## 4. Herokuアプリ一覧取得
@@ -31,16 +31,16 @@ heroku create quark2galaxy-laravel-bbs
 heroku apps
 ```
 >=== quark2galaxy@gmail.com Apps<br>
->quark2galaxy-laravel-bbs
+>quark2galaxy-laravel-instagram
 
 ## 5. リモートリポジトリ heroku の確認
 ```
 git remote -v
 ```
-> heroku  https://git.heroku.com/quark2galaxy-laravel-bbs.git (fetch)<br>
-> heroku  https://git.heroku.com/quark2galaxy-laravel-bbs.git (push)<br>
-> origin  https://github.com/TakanoriShima/bbs_laravel_5.8_new.git (fetch)<br>
-> origin  https://github.com/TakanoriShima/bbs_laravel_5.8_new.git (push)
+> heroku  https://git.heroku.com/quark2galaxy-laravel-instagram.git (fetch)<br>
+> heroku  https://git.heroku.com/quark2galaxy-laravel-instagram.git (push)<br>
+> origin  https://github.com/TakanoriShima/instagram_laravel_5.8_new.git (fetch)<br>
+> origin  https://github.com/TakanoriShima/instagram_laravel_5.8_new.git (push)
 
 ## 6. Heroku 用設定ファイルを新規作成
 ```
@@ -51,21 +51,21 @@ echo "web: vendor/bin/heroku-php-apache2 public/" > Procfile
 ```
 heroku config:set APP_KEY=$(php artisan --no-ansi key:generate --show)
 ```
->Setting APP_KEY and restarting ⬢ quark2galaxy-laravel-bbs... done, v3<br>
+>Setting APP_KEY and restarting ⬢ quark2galaxy-laravel-instagram... done, v3<br>
 >APP_KEY: base64:Nl9uPLdkE20+6OLEYT80mEvLlHehUlkqMaM3lHhmPkA=
 
 ## 8. 環境変数の確認方法
 ```
 heroku config
 ```
->=== quark2galaxy-laravel-bbs Config Vars<br>
+>=== quark2galaxy-laravel-instagram Config Vars<br>
 >APP_KEY: base64:Nl9uPLdkE20+6OLEYT80mEvLlHehUlkqMaM3lHhmPkA=
 
 ## 9. Heroku 上でPostgreSQLデータベースを作成
 ```
 heroku addons:create heroku-postgresql:hobby-dev
 ```
->Creating heroku-postgresql:hobby-dev on ⬢ quark2galaxy-laravel-bbs... free
+>Creating heroku-postgresql:hobby-dev on ⬢ quark2galaxy-laravel-instagram... free
 >Database has been created and is available
 > ! This database is empty. If upgrading, you can transfer<br>
 > ! data from another database with pg:copy<br>
@@ -76,7 +76,7 @@ heroku addons:create heroku-postgresql:hobby-dev
 ```
 heroku config
 ```
->=== quark2galaxy-laravel-bbs Config Vars<br>
+>=== quark2galaxy-laravel-instagram Config Vars<br>
 >APP_KEY:      base64:Nl9uPLdkE20+6OLEYT80mEvLlHehUlkqMaM3lHhmPkA=<br>
 >DATABASE_URL: postgres://ygtjmxlenghsoc:32d35519690b4a91f35fffda64c8b3748bdda8dd8153fe04da013b5483ad1356@ec2-52-72-125-94.compute-1.amazonaws.com:5432/dctg5apf3kva5c
 
@@ -102,7 +102,7 @@ heroku config:set DB_CONNECTION=pgsql DB_USERNAME=ユーザ名 DB_PASSWORD=パ�
 heroku config:set DB_CONNECTION=pgsql DB_USERNAME=ygtjmxlenghsoc DB_PASSWORD=32d35519690b4a91f35fffda64c8b3748bdda8dd8153fe04da013b5483ad1356 DB_HOST=ec2-52-72-125-94.compute-1.amazonaws.com DB_DATABASE=dctg5apf3kva5c
 
 ```
-> Setting DB_CONNECTION, DB_USERNAME, DB_PASSWORD, DB_HOST, DB_DATABASE and restarting ⬢ quark2galaxy-laravel-bbs... done, v6<br>
+> Setting DB_CONNECTION, DB_USERNAME, DB_PASSWORD, DB_HOST, DB_DATABASE and restarting ⬢ quark2galaxy-laravel-instagram... done, v6<br>
 > DB_CONNECTION: pgsql<br>
 > DB_DATABASE:   dctg5apf3kva5c<br>
 > DB_HOST:       ec2-52-72-125-94.compute-1.amazonaws.com<br>
@@ -159,13 +159,13 @@ WARNING: psql major version 9.5, server major version 13.
 SSL connection (protocol: TLSv1.2, cipher: ECDHE-RSA-AES256-GCM-SHA384, bits: 256, compression: off)
 Type "help" for help.
 
-quark2galaxy-laravel-bbs::DATABASE=> \c dctg5apf3kva5c
+quark2galaxy-laravel-instagram::DATABASE=> \c dctg5apf3kva5c
 psql (9.5.24, server 13.4 (Ubuntu 13.4-1.pgdg20.04+1))
 WARNING: psql major version 9.5, server major version 13.
          Some psql features might not work.
 SSL connection (protocol: TLSv1.2, cipher: ECDHE-RSA-AES256-GCM-SHA384, bits: 256, compression: off)
 You are now connected to database "dctg5apf3kva5c" as user "ygtjmxlenghsoc".
-quark2galaxy-laravel-bbs::DATABASE=> \dt
+quark2galaxy-laravel-instagram::DATABASE=> \dt
                  List of relations
  Schema |      Name       | Type  |     Owner      
 --------+-----------------+-------+----------------
@@ -178,7 +178,7 @@ quark2galaxy-laravel-bbs::DATABASE=> \dt
  public | user_follow     | table | ygtjmxlenghsoc
  public | users           | table | ygtjmxlenghsoc
 
-quark2galaxy-laravel-bbs::DATABASE=> \q
+quark2galaxy-laravel-instagram::DATABASE=> \q
  
 ```
 
@@ -187,7 +187,7 @@ quark2galaxy-laravel-bbs::DATABASE=> \q
 heroku config:set AWS_ACCESS_KEY_ID="AKIASNU7DZ6PSN7RJX6R"
 heroku config:set AWS_SECRET_ACCESS_KEY="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"
 heroku config:set AWS_DEFAULT_REGION="ap-northeast-1"
-heroku config:set AWS_BUCKET="quark2galaxy-bbs"
+heroku config:set AWS_BUCKET="quark2galaxy-instagram"
 ```
 
 ## 17. 最新の環境変数確認
@@ -195,10 +195,10 @@ heroku config:set AWS_BUCKET="quark2galaxy-bbs"
 heroku config
 ```
 
->=== quark2galaxy-laravel-bbs Config Vars
+>=== quark2galaxy-laravel-instagram Config Vars
 >APP_KEY:               base64:Nl9uPLdkE20+6OLEYT80mEvLlHehUlkqMaM3lHhmPkA=<br>
 >AWS_ACCESS_KEY_ID:     AKIASNU7DZ6PSN7RJX6R<br>
->AWS_BUCKET:            quark2galaxy-bbs<br>
+>AWS_BUCKET:            quark2galaxy-instagram<br>
 >AWS_DEFAULT_REGION:    ap-northeast-1<br>
 >AWS_SECRET_ACCESS_KEY: tAPdXiJZgjZIjM9cDJVWArX+D5EtUQrn5xy5996Z<br>
 >DATABASE_URL:          postgres://ygtjmxlenghsoc:32d35519690b4a91f35fffda64c8b3748bdda8dd8153fe04da013b5483ad1356@ec2-52-72-125-94.compute-1.amazonaws.com:5432/dctg5apf3kva5c<br>
@@ -210,7 +210,7 @@ heroku config
 
 ## 18. Herokuアプリの起動
 ```
-https://quark2galaxy-laravel-bbs.herokuapp.com/
+https://quark2galaxy-laravel-instagram.herokuapp.com/
 ```
 
 

@@ -4,9 +4,9 @@
 ```
 * 以下、Cloud9上でターミナルを起動してコマンドを打つ *
 ```
-## 1. Composerを使って、5.8バージョンのLaravelプロジェクト（bbs）を新規作成
+## 1. Composerを使って、5.8バージョンのLaravelプロジェクト（instagram）を新規作成
 ```
-composer create-project --prefer-dist laravel/laravel bbs "5.8.*"
+composer create-project --prefer-dist laravel/laravel instagram "5.8.*"
 ```
 
 ## 2. /bbs/app/Http/Middleware/TrustProxies.php 変更
@@ -28,7 +28,7 @@ git config --global -l
 > user.email=quark2galaxy@gmail.com<br>
 
 ```
-cd ~/environment/bbs
+cd ~/environment/instagram
 git init
 git add .
 git commit -m "プロジェクト作成とプロキシ設定"
@@ -37,13 +37,13 @@ git log
 
 ## 4. Githubのリポジトリの作成とpush
 ```
-git remote add origin https://github.com/TakanoriShima/bbs_laravel_5.8.git
+git remote add origin https://github.com/TakanoriShima/laravel_instagram.git
 git branch -M main
 git push -u origin main
 ```
 
 ### 以下のGithubリポジトリに履歴が残っていることを確認
-https://github.com/TakanoriShima/bbs_laravel_5.8
+https://github.com/TakanoriShima/laravel_instagram
 
 ## 5. キャッシュクリア
 ```

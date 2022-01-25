@@ -2,9 +2,9 @@
 <p style='text-align: right;'> &copy; 20210825 by Takanori Shima </p>
 
 ```
-* 以下、Cloud9上でターミナルを起動してbbsフォルダ内でコマンドを打つ *
+* 以下、Cloud9上でターミナルを起動してinstagramフォルダ内でコマンドを打つ *
 ```
-## 1. /bbs/app/Http/Controllers/UsersController.php 変更
+## 1. /instagram/app/Http/Controllers/UsersController.php 変更
 ```
     /**
      * Display the specified resource.
@@ -26,7 +26,7 @@
 ```
 
 
-## 2. /bbs/resources/views/users/show.blade.php 新規作成・編集
+## 2. /instagram/resources/views/users/show.blade.php 新規作成・編集
 ```
 @extends('layouts.app')
 @section('title', $user->name . 'さんのマイページ')

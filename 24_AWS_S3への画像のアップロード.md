@@ -3,7 +3,7 @@
 <p style='text-align: right;'> &copy; 20210831 by Takanori Shima </p>
 
 ```
-* 以下、Cloud9上でターミナルを起動してbbsフォルダ内でコマンドを打つ *
+* 以下、Cloud9上でターミナルを起動してinstagramフォルダ内でコマンドを打つ *
 ```
 
 ## 1. AWS S3 にbucketを作成し、各種設定
@@ -25,7 +25,7 @@
               "s3:GetObjectAcl",
               "s3:DeleteObject"
             ],
-            "Resource": "arn:aws:s3:::quark2galaxy-bbs/*"
+            "Resource": "arn:aws:s3:::quark2galaxy-instagram/*"
         }
     ]
 }
@@ -38,7 +38,7 @@ composer require league/flysystem-aws-s3-v3 ^1.0
 composer require "laravelcollective/html":"5.8.*"
 ```
 
-## 3. /bbs/.env 変更
+## 3. /instagram/.env 変更
 ```
 AWS_ACCESS_KEY_ID=アクセスキー
 AWS_SECRET_ACCESS_KEY=シークレットアクセスキー
@@ -51,7 +51,7 @@ AWS_BUCKET=バケット名
 php artisan config:cache
 ```
 
-## 5. /bbs/app/Http/Controllers/PostsController.php 変更
+## 5. /instagram/app/Http/Controllers/PostsController.php 変更
 ### ref) https://qiita.com/tiwu_dev/items/ecb115a92ebfebf6a92f
 ```
 <?php
@@ -271,7 +271,7 @@ class PostsController extends Controller
 }
 ```
 
-## 6. /bbs/app/Http/Controllers/ProfilesController.php 変更
+## 6. /instagram/app/Http/Controllers/ProfilesController.php 変更
 ```
 <?php
 

@@ -2,13 +2,13 @@
 <p style='text-align: right;'> &copy; 20210824 by Takanori Shima </p>
 
 ```
-* 以下、Cloud9上でターミナルを起動してbbsフォルダ内でコマンドを打つ *
+* 以下、Cloud9上でターミナルを起動してinstagramフォルダ内でコマンドを打つ *
 ```
 ## 1. MySQLに新規データベース作成
 ```
 sudo service mysqld start
 mysql -u root
-mysql> create database bbs default character set utf8;
+mysql> create database instagram default character set utf8;
 mysql> show databases;
 mysql> exit;
 ```
@@ -19,7 +19,7 @@ mysql> exit;
 DB_CONNECTION=mysql
 DB_HOST=127.0.0.1
 DB_PORT=3306
-DB_DATABASE=bbs
+DB_DATABASE=instagram
 DB_USERNAME=root
 DB_PASSWORD=
 ```
